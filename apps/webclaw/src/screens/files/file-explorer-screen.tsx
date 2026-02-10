@@ -72,10 +72,8 @@ export function FileExplorerScreen() {
   )
 
   return (
-    <div className="h-screen bg-surface text-primary-900">
-      <div className={cn('h-full overflow-hidden grid grid-cols-[auto_1fr]')}>
-        {sidebar}
-
+    <div className="h-full bg-surface text-primary-900">
+      <div className={cn('h-full overflow-hidden')}>
         <main aria-label="File explorer" style={mainStyles}>
           {/* Header */}
           <header className="border-b border-primary-200 px-4 py-3">

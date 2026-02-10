@@ -1,13 +1,9 @@
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
-  AiCloud02Icon,
-  Folder01Icon,
-  ComputerIcon,
   PencilEdit02Icon,
   Search01Icon,
   Settings01Icon,
   SidebarLeft01Icon,
-  SmartPhone01Icon,
 } from '@hugeicons/core-free-icons'
 import { AnimatePresence, motion } from 'motion/react'
 import { memo, useState } from 'react'
@@ -314,49 +310,7 @@ function ChatSidebarComponent({
         </AnimatePresence>
       </div>
 
-      <div className="px-2 py-2 border-t border-primary-200 bg-primary-100 flex flex-col gap-px">
-        {[
-          { to: '/agents', icon: AiCloud02Icon, label: 'Agents' },
-          { to: '/files', icon: Folder01Icon, label: 'Files' },
-          { to: '/bots', icon: SmartPhone01Icon, label: 'Bots' },
-          { to: '/services', icon: ComputerIcon, label: 'Services' },
-        ].map((item) => (
-          <motion.div
-            key={item.label}
-            layout
-            transition={{ layout: transition }}
-            className="w-full"
-          >
-            <Link
-              to={item.to}
-              className={cn(
-                buttonVariants({ variant: 'ghost', size: 'sm' }),
-                'w-full justify-start pl-1.5',
-              )}
-              title={isCollapsed ? item.label : undefined}
-            >
-              <HugeiconsIcon
-                icon={item.icon}
-                size={20}
-                strokeWidth={1.5}
-                className="min-w-5"
-              />
-              <AnimatePresence initial={false} mode="wait">
-                {!isCollapsed && (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={transition}
-                    className="overflow-hidden whitespace-nowrap"
-                  >
-                    {item.label}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </Link>
-          </motion.div>
-        ))}
+      <div className="px-2 py-2 border-t border-primary-200 bg-primary-100">
         <motion.div
           layout
           transition={{ layout: transition }}

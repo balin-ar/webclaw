@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { AppLayout } from '../../components/app-layout'
 import { ChatScreen } from '../../screens/chat/chat-screen'
 import { moveHistoryMessages } from '../../screens/chat/chat-queries'
 
@@ -49,11 +50,13 @@ function ChatRoute() {
   )
 
   return (
-    <ChatScreen
-      activeFriendlyId={activeFriendlyId}
-      isNewChat={isNewChat}
-      forcedSessionKey={forcedSessionKey}
-      onSessionResolved={isNewChat ? handleSessionResolved : undefined}
-    />
+    <AppLayout>
+      <ChatScreen
+        activeFriendlyId={activeFriendlyId}
+        isNewChat={isNewChat}
+        forcedSessionKey={forcedSessionKey}
+        onSessionResolved={isNewChat ? handleSessionResolved : undefined}
+      />
+    </AppLayout>
   )
 }
