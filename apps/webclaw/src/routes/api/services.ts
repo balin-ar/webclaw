@@ -1,58 +1,138 @@
-import { readFile, writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
 import { createFileRoute } from '@tanstack/react-router'
 import { json } from '@tanstack/react-start'
+import { execSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 
-type ServiceEntry = {
-  id: string
+type DetectedService = {
   name: string
-  description: string
+  pid: number
   port: number
-  healthCheckUrl: string
-  repo: string
-  status: 'enabled' | 'disabled'
+  protocol: string
+  address: string
+  url: string
+  status: 'up'
 }
 
-type ServicesConfig = {
-  services: Array<ServiceEntry>
-}
-
-type ServiceWithHealth = ServiceEntry & {
-  healthy: boolean
-  healthError?: string
-}
-
-const CONFIG_PATH = resolve(
-  import.meta.dirname ?? __dirname,
-  '../server/services-config.json',
-)
-
-async function readConfig(): Promise<ServicesConfig> {
+function detectListeningPorts(): DetectedService[] {
+  const services: DetectedService[] = []
+  
   try {
-    const raw = await readFile(CONFIG_PATH, 'utf-8')
-    return JSON.parse(raw) as ServicesConfig
-  } catch {
-    return { services: [] }
-  }
-}
-
-async function writeConfig(config: ServicesConfig): Promise<void> {
-  await writeFile(CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', 'utf-8')
-}
-
-async function checkHealth(url: string): Promise<{ healthy: boolean; error?: string }> {
-  try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 5000)
-    const res = await fetch(url, { signal: controller.signal })
-    clearTimeout(timeout)
-    return { healthy: res.ok }
-  } catch (err) {
-    return {
-      healthy: false,
-      error: err instanceof Error ? err.message : String(err),
+    // Try ss first (modern), fallback to netstat
+    let output: string
+    try {
+      output = execSync('ss -tlnp 2>/dev/null', { encoding: 'utf-8', timeout: 5000 })
+    } catch {
+      try {
+        output = execSync('netstat -tlnp 2>/dev/null', { encoding: 'utf-8', timeout: 5000 })
+      } catch {
+        return services
+      }
     }
+
+    const lines = output.split('\n').filter((l) => l.includes('LISTEN'))
+
+    for (const line of lines) {
+      try {
+        // Parse address:port
+        const addrMatch = line.match(/(\S+):(\d+)\s/)
+        if (!addrMatch) continue
+
+        const address = addrMatch[1]
+        const port = parseInt(addrMatch[2], 10)
+        if (isNaN(port) || port === 0) continue
+
+        // Parse process name/pid
+        let processName = 'unknown'
+        let pid = 0
+
+        // ss format: users:(("node",pid=12345,fd=3))
+        const ssMatch = line.match(/users:\(\("([^"]+)",pid=(\d+)/)
+        if (ssMatch) {
+          processName = ssMatch[1]
+          pid = parseInt(ssMatch[2], 10)
+        } else {
+          // netstat format: 12345/node
+          const netstatMatch = line.match(/(\d+)\/(\S+)/)
+          if (netstatMatch) {
+            pid = parseInt(netstatMatch[1], 10)
+            processName = netstatMatch[2]
+          }
+        }
+
+        // Try to get full command line for better naming
+        let fullCmd = processName
+        if (pid > 0) {
+          try {
+            fullCmd = readFileSync(`/proc/${pid}/cmdline`, 'utf-8')
+              .replace(/\0/g, ' ')
+              .trim()
+          } catch {
+            // ignore
+          }
+        }
+
+        // Generate friendly name
+        const friendlyName = getFriendlyName(processName, fullCmd, port)
+
+        const host = address === '*' || address === '0.0.0.0' || address === '::' ? 'localhost' : address
+        const url = `http://${host}:${port}`
+
+        services.push({
+          name: friendlyName,
+          pid,
+          port,
+          protocol: 'tcp',
+          address: `${address}:${port}`,
+          url,
+          status: 'up',
+        })
+      } catch {
+        continue
+      }
+    }
+  } catch {
+    // ignore
   }
+
+  // Sort by port
+  return services.sort((a, b) => a.port - b.port)
+}
+
+function getFriendlyName(process: string, cmdline: string, port: number): string {
+  const cmd = cmdline.toLowerCase()
+  
+  // Known services by port
+  const knownPorts: Record<number, string> = {
+    80: 'HTTP Server',
+    443: 'HTTPS Server',
+    3000: 'WebClaw (Production)',
+    3001: 'WebClaw (Dev)',
+    5000: 'Flask App',
+    8000: 'Django',
+    8080: 'File Browser',
+    8123: 'Home Assistant',
+    8443: 'HTTPS Alt',
+    8899: 'Music Player',
+    18789: 'OpenClaw Gateway',
+  }
+
+  if (knownPorts[port]) return knownPorts[port]
+
+  // Detect by process/cmdline
+  if (cmd.includes('vite')) return `Vite Dev Server (:${port})`
+  if (cmd.includes('next')) return `Next.js (:${port})`
+  if (cmd.includes('nginx')) return `Nginx (:${port})`
+  if (cmd.includes('gunicorn')) return `Gunicorn (:${port})`
+  if (cmd.includes('uvicorn')) return `Uvicorn (:${port})`
+  if (cmd.includes('python')) return `Python (:${port})`
+  if (cmd.includes('node')) return `Node.js (:${port})`
+  if (cmd.includes('docker')) return `Docker (:${port})`
+  if (cmd.includes('redis')) return `Redis (:${port})`
+  if (cmd.includes('postgres')) return `PostgreSQL (:${port})`
+  if (cmd.includes('mysql')) return `MySQL (:${port})`
+  if (cmd.includes('mongo')) return `MongoDB (:${port})`
+
+  return `${process} (:${port})`
 }
 
 export const Route = createFileRoute('/api/services')({
@@ -60,88 +140,11 @@ export const Route = createFileRoute('/api/services')({
     handlers: {
       GET: async () => {
         try {
-          const config = await readConfig()
-
-          const results: Array<ServiceWithHealth> = await Promise.all(
-            config.services.map(async (svc) => {
-              if (!svc.healthCheckUrl) {
-                return { ...svc, healthy: false, healthError: 'no healthCheckUrl configured' }
-              }
-              const health = await checkHealth(svc.healthCheckUrl)
-              return {
-                ...svc,
-                healthy: health.healthy,
-                healthError: health.error,
-              }
-            }),
-          )
-
-          return json({ services: results })
+          const services = detectListeningPorts()
+          return json({ services })
         } catch (err) {
           return json(
-            { error: err instanceof Error ? err.message : String(err) },
-            { status: 500 },
-          )
-        }
-      },
-      POST: async ({ request }) => {
-        try {
-          const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
-
-          const name = typeof body.name === 'string' ? body.name.trim() : ''
-          if (!name) {
-            return json({ ok: false, error: 'name is required' }, { status: 400 })
-          }
-
-          const entry: ServiceEntry = {
-            id: typeof body.id === 'string' && body.id.trim() ? body.id.trim() : name.toLowerCase().replace(/\s+/g, '-'),
-            name,
-            description: typeof body.description === 'string' ? body.description : '',
-            port: typeof body.port === 'number' ? body.port : 0,
-            healthCheckUrl: typeof body.healthCheckUrl === 'string' ? body.healthCheckUrl : '',
-            repo: typeof body.repo === 'string' ? body.repo : '',
-            status: body.status === 'disabled' ? 'disabled' : 'enabled',
-          }
-
-          const config = await readConfig()
-          const idx = config.services.findIndex((s) => s.id === entry.id)
-          if (idx >= 0) {
-            config.services[idx] = entry
-          } else {
-            config.services.push(entry)
-          }
-
-          await writeConfig(config)
-
-          return json({ ok: true, service: entry })
-        } catch (err) {
-          return json(
-            { ok: false, error: err instanceof Error ? err.message : String(err) },
-            { status: 500 },
-          )
-        }
-      },
-      DELETE: async ({ request }) => {
-        try {
-          const url = new URL(request.url)
-          const id = url.searchParams.get('id') ?? ''
-          if (!id) {
-            return json({ ok: false, error: 'id is required' }, { status: 400 })
-          }
-
-          const config = await readConfig()
-          const idx = config.services.findIndex((s) => s.id === id)
-          if (idx < 0) {
-            return json({ ok: false, error: 'service not found' }, { status: 404 })
-          }
-
-          config.services.splice(idx, 1)
-          await writeConfig(config)
-
-          return json({ ok: true })
-        } catch (err) {
-          return json(
-            { ok: false, error: err instanceof Error ? err.message : String(err) },
+            { error: err instanceof Error ? err.message : String(err), services: [] },
             { status: 500 },
           )
         }

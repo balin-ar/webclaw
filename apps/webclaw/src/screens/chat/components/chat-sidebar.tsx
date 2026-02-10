@@ -316,10 +316,10 @@ function ChatSidebarComponent({
 
       <div className="px-2 py-2 border-t border-primary-200 bg-primary-100 flex flex-col gap-px">
         {[
-          { to: '/agents' as const, icon: AiCloud02Icon, label: 'Agents' },
-          { to: '/files' as const, icon: Folder01Icon, label: 'Files' },
-          { to: '/bots' as const, icon: SmartPhone01Icon, label: 'Bots' },
-          { to: '/services' as const, icon: ComputerIcon, label: 'Services' },
+          { to: '/agents', icon: AiCloud02Icon, label: 'Agents' },
+          { to: '/files', icon: Folder01Icon, label: 'Files' },
+          { to: '/bots', icon: SmartPhone01Icon, label: 'Bots' },
+          { to: '/services', icon: ComputerIcon, label: 'Services' },
         ].map((item) => (
           <motion.div
             key={item.label}

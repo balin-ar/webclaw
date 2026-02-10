@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router'
 import { useEffect, useState, useCallback } from 'react'
 
 type CronJob = {
@@ -50,16 +49,9 @@ export function BotsScreen() {
   const { jobs, loading, error, refetch } = useCronJobs()
 
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-primary-950">
+    <div className="h-full flex flex-col bg-white dark:bg-primary-950">
       <div className="flex items-center justify-between h-12 px-4 border-b border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-950 shrink-0">
         <div className="flex items-center gap-3">
-          <Link
-            to="/chat/$sessionKey"
-            params={{ sessionKey: 'main' }}
-            className="text-xs text-primary-500 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
-          >
-            ← Back to chat
-          </Link>
           <h1 className="text-sm font-medium text-primary-900 dark:text-primary-100">
             Bots & Cron Jobs
           </h1>
