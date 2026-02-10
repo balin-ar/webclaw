@@ -94,45 +94,93 @@ function detectListeningPorts(): DetectedService[] {
     // ignore
   }
 
+  // Deduplicate: keep one entry per port (prefer IPv4 / 0.0.0.0 / *)
+  const byPort = new Map<number, DetectedService>()
+  for (const svc of services) {
+    const existing = byPort.get(svc.port)
+    if (!existing) {
+      byPort.set(svc.port, svc)
+    } else {
+      // Prefer entry with PID, or IPv4 over IPv6
+      if (svc.pid > 0 && existing.pid === 0) {
+        byPort.set(svc.port, svc)
+      } else if (!existing.address.includes('[') && svc.address.includes('[')) {
+        // keep existing (IPv4)
+      } else if (existing.address.includes('[') && !svc.address.includes('[')) {
+        byPort.set(svc.port, svc)
+      }
+    }
+  }
+
+  // Filter out ephemeral/high ports that are likely internal (>30000 unless known)
+  const knownHighPorts = new Set([40000])
+  const filtered = [...byPort.values()].filter((svc) => {
+    if (svc.port < 30000) return true
+    if (knownHighPorts.has(svc.port)) return true
+    if (svc.name !== `Port ${svc.port}`) return true // has a known name
+    return false
+  })
+
   // Sort by port
-  return services.sort((a, b) => a.port - b.port)
+  return filtered.sort((a, b) => a.port - b.port)
 }
 
 function getFriendlyName(process: string, cmdline: string, port: number): string {
   const cmd = cmdline.toLowerCase()
   
-  // Known services by port
   const knownPorts: Record<number, string> = {
+    22: 'SSH',
+    25: 'SMTP',
+    53: 'DNS',
     80: 'HTTP Server',
-    443: 'HTTPS Server',
+    443: 'HTTPS / Tailscale',
+    631: 'CUPS (Printing)',
+    1883: 'Mosquitto MQTT',
     3000: 'WebClaw (Production)',
     3001: 'WebClaw (Dev)',
     5000: 'Flask App',
+    5432: 'PostgreSQL',
+    5900: 'VNC Server',
+    6379: 'Redis',
     8000: 'Django',
     8080: 'File Browser',
     8123: 'Home Assistant',
     8443: 'HTTPS Alt',
+    8883: 'MQTT TLS',
     8899: 'Music Player',
+    9090: 'Prometheus',
+    11984: 'Frigate API',
+    18554: 'Frigate RTSP',
+    18555: 'Frigate WebRTC',
     18789: 'OpenClaw Gateway',
+    18792: 'OpenClaw Internal',
+    20241: 'Frigate HTTP',
+    27017: 'MongoDB',
   }
 
   if (knownPorts[port]) return knownPorts[port]
 
   // Detect by process/cmdline
-  if (cmd.includes('vite')) return `Vite Dev Server (:${port})`
-  if (cmd.includes('next')) return `Next.js (:${port})`
-  if (cmd.includes('nginx')) return `Nginx (:${port})`
-  if (cmd.includes('gunicorn')) return `Gunicorn (:${port})`
-  if (cmd.includes('uvicorn')) return `Uvicorn (:${port})`
-  if (cmd.includes('python')) return `Python (:${port})`
-  if (cmd.includes('node')) return `Node.js (:${port})`
-  if (cmd.includes('docker')) return `Docker (:${port})`
-  if (cmd.includes('redis')) return `Redis (:${port})`
-  if (cmd.includes('postgres')) return `PostgreSQL (:${port})`
-  if (cmd.includes('mysql')) return `MySQL (:${port})`
-  if (cmd.includes('mongo')) return `MongoDB (:${port})`
+  if (cmd.includes('vite')) return `Vite Dev Server`
+  if (cmd.includes('next')) return `Next.js`
+  if (cmd.includes('nginx')) return `Nginx`
+  if (cmd.includes('gunicorn')) return `Gunicorn`
+  if (cmd.includes('uvicorn')) return `Uvicorn`
+  if (cmd.includes('frigate')) return `Frigate`
+  if (cmd.includes('mosquitto')) return `Mosquitto MQTT`
+  if (cmd.includes('tailscale')) return `Tailscale`
+  if (cmd.includes('cups')) return `CUPS`
+  if (cmd.includes('sshd')) return `SSH`
+  if (cmd.includes('python')) return `Python App`
+  if (cmd.includes('node')) return `Node.js App`
+  if (cmd.includes('docker')) return `Docker`
+  if (cmd.includes('redis')) return `Redis`
+  if (cmd.includes('postgres')) return `PostgreSQL`
+  if (cmd.includes('mysql')) return `MySQL`
+  if (cmd.includes('mongo')) return `MongoDB`
 
-  return `${process} (:${port})`
+  if (process !== 'unknown') return process
+  return `Port ${port}`
 }
 
 export const Route = createFileRoute('/api/services')({
