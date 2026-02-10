@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { ChannelIcon } from './channel-icon'
+import { SessionActions } from './session-actions'
 import {
   type Session,
   type SessionType,
@@ -9,6 +11,7 @@ import {
 
 type SessionCardProps = {
   session: Session
+  onAction?: () => void
 }
 
 const typeBadgeStyles: Record<SessionType, string> = {
@@ -68,7 +71,8 @@ function getLastCost(session: Session): number | null {
   return null
 }
 
-export function SessionCard({ session }: SessionCardProps) {
+export function SessionCard({ session, onAction }: SessionCardProps) {
+  const [expanded, setExpanded] = useState(false)
   const type = getSessionType(session.key)
   const channel = getChannelFromKey(session.key)
   const active = isActiveRecently(session.updatedAt)
@@ -83,7 +87,10 @@ export function SessionCard({ session }: SessionCardProps) {
     session.label || session.displayName || session.friendlyId || session.key
 
   return (
-    <div className="rounded-lg border border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-950 p-4 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
+    <div
+      className="rounded-lg border border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-950 p-4 hover:border-primary-300 dark:hover:border-primary-700 transition-colors cursor-pointer"
+      onClick={() => setExpanded(!expanded)}
+    >
       {/* Header row */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2 min-w-0">
@@ -148,6 +155,17 @@ export function SessionCard({ session }: SessionCardProps) {
         <p className="text-xs text-primary-500 dark:text-primary-400 leading-relaxed line-clamp-2">
           {truncateText(lastMsg, 150)}
         </p>
+      )}
+
+      {/* Actions (expandable) */}
+      {expanded && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <SessionActions
+            sessionKey={session.key}
+            friendlyId={session.friendlyId}
+            onAction={onAction}
+          />
+        </div>
       )}
     </div>
   )

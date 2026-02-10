@@ -57,7 +57,7 @@ export function AgentsScreen() {
               {sessions
                 .sort((a, b) => b.updatedAt - a.updatedAt)
                 .map((session) => (
-                  <SessionCard key={session.key} session={session} />
+                  <SessionCard key={session.key} session={session} onAction={refetch} />
                 ))}
             </div>
 
