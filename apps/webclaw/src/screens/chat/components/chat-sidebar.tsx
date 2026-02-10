@@ -279,126 +279,6 @@ function ChatSidebarComponent({
               </span>
             ) : null}
           </Button>
-          
-          <TooltipProvider>
-            <TooltipRoot>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/files"
-                  className={cn(
-                    buttonVariants({ variant: 'ghost', size: 'sm' }),
-                    'w-full pl-1.5 justify-start',
-                  )}
-                  onClick={onSelectSession}
-                >
-                  <HugeiconsIcon
-                    icon={Folder01Icon}
-                    size={20}
-                    strokeWidth={1.5}
-                    className="min-w-5"
-                  />
-                  <AnimatePresence initial={false} mode="wait">
-                    {!isCollapsed && (
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={transition}
-                        className="overflow-hidden whitespace-nowrap"
-                      >
-                        Files
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </Link>
-              </TooltipTrigger>
-              {isCollapsed && (
-                <TooltipContent side="right">
-                  Files
-                </TooltipContent>
-              )}
-            </TooltipRoot>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <TooltipRoot>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/services"
-                  className={cn(
-                    buttonVariants({ variant: 'ghost', size: 'sm' }),
-                    'w-full pl-1.5 justify-start',
-                  )}
-                  onClick={onSelectSession}
-                >
-                  <HugeiconsIcon
-                    icon={ComputerIcon}
-                    size={20}
-                    strokeWidth={1.5}
-                    className="min-w-5"
-                  />
-                  <AnimatePresence initial={false} mode="wait">
-                    {!isCollapsed && (
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={transition}
-                        className="overflow-hidden whitespace-nowrap"
-                      >
-                        Services
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </Link>
-              </TooltipTrigger>
-              {isCollapsed && (
-                <TooltipContent side="right">
-                  Services
-                </TooltipContent>
-              )}
-            </TooltipRoot>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <TooltipRoot>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/bots"
-                  className={cn(
-                    buttonVariants({ variant: 'ghost', size: 'sm' }),
-                    'w-full pl-1.5 justify-start',
-                  )}
-                  onClick={onSelectSession}
-                >
-                  <HugeiconsIcon
-                    icon={SmartPhone01Icon}
-                    size={20}
-                    strokeWidth={1.5}
-                    className="min-w-5"
-                  />
-                  <AnimatePresence initial={false} mode="wait">
-                    {!isCollapsed && (
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={transition}
-                        className="overflow-hidden whitespace-nowrap"
-                      >
-                        Bots
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </Link>
-              </TooltipTrigger>
-              {isCollapsed && (
-                <TooltipContent side="right">
-                  Bots
-                </TooltipContent>
-              )}
-            </TooltipRoot>
-          </TooltipProvider>
         </motion.div>
       </div>
 
@@ -434,41 +314,49 @@ function ChatSidebarComponent({
         </AnimatePresence>
       </div>
 
-      <div className="px-2 py-3 border-t border-primary-200 bg-primary-100 flex flex-col gap-px">
-        <motion.div
-          layout
-          transition={{ layout: transition }}
-          className="w-full"
-        >
-          <Link
-            to="/agents"
-            className={cn(
-              buttonVariants({ variant: 'ghost', size: 'sm' }),
-              'w-full justify-start pl-1.5',
-            )}
-            title={isCollapsed ? 'Agents' : undefined}
+      <div className="px-2 py-2 border-t border-primary-200 bg-primary-100 flex flex-col gap-px">
+        {[
+          { to: '/agents' as const, icon: AiCloud02Icon, label: 'Agents' },
+          { to: '/files' as const, icon: Folder01Icon, label: 'Files' },
+          { to: '/bots' as const, icon: SmartPhone01Icon, label: 'Bots' },
+          { to: '/services' as const, icon: ComputerIcon, label: 'Services' },
+        ].map((item) => (
+          <motion.div
+            key={item.label}
+            layout
+            transition={{ layout: transition }}
+            className="w-full"
           >
-            <HugeiconsIcon
-              icon={AiCloud02Icon}
-              size={20}
-              strokeWidth={1.5}
-              className="min-w-5"
-            />
-            <AnimatePresence initial={false} mode="wait">
-              {!isCollapsed && (
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={transition}
-                  className="overflow-hidden whitespace-nowrap"
-                >
-                  Agents
-                </motion.span>
+            <Link
+              to={item.to}
+              className={cn(
+                buttonVariants({ variant: 'ghost', size: 'sm' }),
+                'w-full justify-start pl-1.5',
               )}
-            </AnimatePresence>
-          </Link>
-        </motion.div>
+              title={isCollapsed ? item.label : undefined}
+            >
+              <HugeiconsIcon
+                icon={item.icon}
+                size={20}
+                strokeWidth={1.5}
+                className="min-w-5"
+              />
+              <AnimatePresence initial={false} mode="wait">
+                {!isCollapsed && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={transition}
+                    className="overflow-hidden whitespace-nowrap"
+                  >
+                    {item.label}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
+          </motion.div>
+        ))}
         <motion.div
           layout
           transition={{ layout: transition }}
