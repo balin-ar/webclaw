@@ -1,5 +1,4 @@
 import { HugeiconsIcon } from '@hugeicons/react'
-import { HugeiconsIcon } from '@hugeicons/react'
 import {
   AiCloud02Icon,
   BubbleChatIcon,
