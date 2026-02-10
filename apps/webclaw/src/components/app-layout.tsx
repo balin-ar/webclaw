@@ -5,13 +5,13 @@ import {
   Folder01Icon,
   ComputerIcon,
   SmartPhone01Icon,
-  Settings01Icon,
   SidebarLeft01Icon,
 } from '@hugeicons/core-free-icons'
 import { useState } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { WebClawIconBig } from '@/components/icons/webclaw-big'
 
 const navItems = [
@@ -24,9 +24,10 @@ const navItems = [
 
 type AppLayoutProps = {
   children: React.ReactNode
+  sidebarContent?: React.ReactNode
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children, sidebarContent }: AppLayoutProps) {
   const [collapsed, setCollapsed] = useState(false)
   const router = useRouter()
   const currentPath = router.state.location.pathname
@@ -36,12 +37,12 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'border-r border-primary-200 dark:border-primary-800 h-full overflow-hidden bg-primary-50 dark:bg-primary-950 flex flex-col transition-all duration-150',
-          collapsed ? 'w-12' : 'w-[200px]',
+          'border-r border-primary-200 dark:border-primary-800 h-full overflow-hidden bg-primary-50 dark:bg-primary-950 flex flex-col transition-all duration-150 shrink-0',
+          collapsed ? 'w-12' : (sidebarContent ? 'w-[300px]' : 'w-[200px]'),
         )}
       >
         {/* Top bar */}
-        <div className="flex items-center h-12 px-2 justify-between">
+        <div className="flex items-center h-12 px-2 justify-between shrink-0">
           {!collapsed && (
             <Link
               to="/chat/$sessionKey"
@@ -68,11 +69,18 @@ export function AppLayout({ children }: AppLayoutProps) {
           </Button>
         </div>
 
-        {/* Spacer */}
-        <div className="flex-1" />
+        {/* Dynamic sidebar content (e.g. session list for chat) */}
+        {!collapsed && sidebarContent && (
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {sidebarContent}
+          </div>
+        )}
+
+        {/* Spacer when no sidebar content */}
+        {(!sidebarContent || collapsed) && <div className="flex-1" />}
 
         {/* Nav links */}
-        <div className="px-2 py-2 border-t border-primary-200 dark:border-primary-800 flex flex-col gap-px">
+        <div className="px-2 py-2 border-t border-primary-200 dark:border-primary-800 flex flex-col gap-px shrink-0">
           {navItems.map((item) => {
             const matchPath = 'matchPrefix' in item ? item.matchPrefix : item.to
             const isActive = currentPath.startsWith(matchPath)

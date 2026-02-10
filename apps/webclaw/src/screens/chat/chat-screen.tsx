@@ -59,6 +59,7 @@ type ChatScreenProps = {
     friendlyId: string
   }) => void
   forcedSessionKey?: string
+  hideSidebar?: boolean
 }
 
 export function ChatScreen({
@@ -66,6 +67,7 @@ export function ChatScreen({
   isNewChat = false,
   onSessionResolved,
   forcedSessionKey,
+  hideSidebar = false,
 }: ChatScreenProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -604,14 +606,15 @@ export function ChatScreen({
   )
 
   return (
-    <div className="h-screen bg-surface text-primary-900">
+    <div className="h-full bg-surface text-primary-900">
       <div
         className={cn(
           'h-full overflow-hidden',
-          isMobile ? 'relative' : 'grid grid-cols-[auto_1fr]',
+          !hideSidebar && !isMobile ? 'grid grid-cols-[auto_1fr]' : '',
+          !hideSidebar && isMobile ? 'relative' : '',
         )}
       >
-        {hideUi ? null : isMobile ? (
+        {hideSidebar ? null : hideUi ? null : isMobile ? (
           <>
             <div
               className={cn(

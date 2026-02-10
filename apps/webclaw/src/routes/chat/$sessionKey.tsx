@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { AppLayout } from '../../components/app-layout'
+import { ChatSessionList } from '../../components/chat-session-list'
 import { ChatScreen } from '../../screens/chat/chat-screen'
 import { moveHistoryMessages } from '../../screens/chat/chat-queries'
 
@@ -29,16 +30,13 @@ function ChatRoute() {
       friendlyId: string
       sessionKey: string
     }) {
-      moveHistoryMessages(
-        queryClient,
-        'new',
-        'new',
-        payload.friendlyId,
-        payload.sessionKey,
-      )
       setForcedSession({
         friendlyId: payload.friendlyId,
         sessionKey: payload.sessionKey,
+      })
+      void moveHistoryMessages(queryClient, {
+        from: 'new',
+        to: payload.friendlyId,
       })
       navigate({
         to: '/chat/$sessionKey',
@@ -50,12 +48,13 @@ function ChatRoute() {
   )
 
   return (
-    <AppLayout>
+    <AppLayout sidebarContent={<ChatSessionList />}>
       <ChatScreen
         activeFriendlyId={activeFriendlyId}
         isNewChat={isNewChat}
         forcedSessionKey={forcedSessionKey}
         onSessionResolved={isNewChat ? handleSessionResolved : undefined}
+        hideSidebar
       />
     </AppLayout>
   )
