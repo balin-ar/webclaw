@@ -1,5 +1,6 @@
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
+  AiCloud02Icon,
   Folder01Icon,
   ComputerIcon,
   PencilEdit02Icon,
@@ -433,7 +434,41 @@ function ChatSidebarComponent({
         </AnimatePresence>
       </div>
 
-      <div className="px-2 py-3 border-t border-primary-200 bg-primary-100">
+      <div className="px-2 py-3 border-t border-primary-200 bg-primary-100 flex flex-col gap-px">
+        <motion.div
+          layout
+          transition={{ layout: transition }}
+          className="w-full"
+        >
+          <Link
+            to="/agents"
+            className={cn(
+              buttonVariants({ variant: 'ghost', size: 'sm' }),
+              'w-full justify-start pl-1.5',
+            )}
+            title={isCollapsed ? 'Agents' : undefined}
+          >
+            <HugeiconsIcon
+              icon={AiCloud02Icon}
+              size={20}
+              strokeWidth={1.5}
+              className="min-w-5"
+            />
+            <AnimatePresence initial={false} mode="wait">
+              {!isCollapsed && (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={transition}
+                  className="overflow-hidden whitespace-nowrap"
+                >
+                  Agents
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </Link>
+        </motion.div>
         <motion.div
           layout
           transition={{ layout: transition }}
