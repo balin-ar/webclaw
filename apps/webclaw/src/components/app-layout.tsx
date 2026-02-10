@@ -1,9 +1,11 @@
 import { HugeiconsIcon } from '@hugeicons/react'
+import { HugeiconsIcon } from '@hugeicons/react'
 import {
   AiCloud02Icon,
   BubbleChatIcon,
   Folder01Icon,
   ComputerIcon,
+  Settings01Icon,
   SmartPhone01Icon,
   SidebarLeft01Icon,
 } from '@hugeicons/core-free-icons'
@@ -13,6 +15,8 @@ import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 import { Button } from '@/components/ui/button'
 import { WebClawIconBig } from '@/components/icons/webclaw-big'
+import { useChatSettings } from '@/screens/chat/hooks/use-chat-settings'
+import { SettingsDialog } from '@/screens/chat/components/settings-dialog'
 
 const navItems = [
   { to: '/chat/main', icon: BubbleChatIcon, label: 'Chat', matchPrefix: '/chat' },
@@ -31,6 +35,17 @@ export function AppLayout({ children, sidebarContent }: AppLayoutProps) {
   const [collapsed, setCollapsed] = useState(false)
   const router = useRouter()
   const currentPath = router.state.location.pathname
+  const {
+    settingsOpen,
+    setSettingsOpen,
+    pathsLoading,
+    pathsError,
+    paths,
+    handleOpenSettings,
+    closeSettings,
+    copySessionsDir,
+    copyStorePath,
+  } = useChatSettings()
 
   return (
     <div className="h-screen flex">
@@ -81,7 +96,7 @@ export function AppLayout({ children, sidebarContent }: AppLayoutProps) {
 
         {/* Nav links */}
         <div className="px-2 py-2 border-t border-primary-200 dark:border-primary-800 flex flex-col gap-px shrink-0">
-          {navItems.map((item) => {
+          {navItems.map((item: (typeof navItems)[number]) => {
             const matchPath = 'matchPrefix' in item ? item.matchPrefix : item.to
             const isActive = currentPath.startsWith(matchPath)
             return (
@@ -106,11 +121,37 @@ export function AppLayout({ children, sidebarContent }: AppLayoutProps) {
               </Link>
             )
           })}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleOpenSettings}
+            title={collapsed ? 'Settings' : undefined}
+            className="w-full justify-start pl-1.5"
+          >
+            <HugeiconsIcon
+              icon={Settings01Icon}
+              size={20}
+              strokeWidth={1.5}
+              className="min-w-5"
+            />
+            {!collapsed && <span>Settings</span>}
+          </Button>
         </div>
       </aside>
 
       {/* Content */}
       <main className="flex-1 min-w-0 overflow-hidden">{children}</main>
+
+      <SettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        pathsLoading={pathsLoading}
+        pathsError={pathsError}
+        paths={paths}
+        onClose={closeSettings}
+        onCopySessionsDir={copySessionsDir}
+        onCopyStorePath={copyStorePath}
+      />
     </div>
   )
 }
