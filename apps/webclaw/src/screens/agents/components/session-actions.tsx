@@ -6,9 +6,8 @@ type SessionActionsProps = {
   onAction?: () => void
 }
 
-async function deleteSession(sessionKey: string, friendlyId?: string) {
+async function deleteSession(sessionKey: string) {
   const params = new URLSearchParams({ sessionKey })
-  if (friendlyId) params.set('friendlyId', friendlyId)
   const res = await fetch(`/api/sessions?${params}`, { method: 'DELETE' })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()
@@ -42,7 +41,7 @@ export function SessionActions({
     }
     try {
       setStatus('Resetting…')
-      await deleteSession(sessionKey, friendlyId)
+      await deleteSession(sessionKey)
       setStatus('✓ Reset')
       setConfirming(null)
       onAction?.()
